@@ -1,4 +1,3 @@
-import pygame
 import struct
 import math
 
@@ -63,6 +62,8 @@ HID_USAGE_WHL = 0x38
 HID_USAGE_POV = 0x39
 
 def event_pygame2vjoy(event):
+    import pygame
+    
     if type(event) == tuple:
         event_type, event_button, event_exis, event_value = event
     else:
