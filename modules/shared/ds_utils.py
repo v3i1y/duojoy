@@ -1,5 +1,11 @@
 import struct
 import math
+"""
+pygame event types
+"""
+PG_JOYBUTTONDOWN = 1539
+PG_JOYBUTTONUP   = 1540
+PG_JOYAXISMOTION = 1536
 
 """
 Dual Shock Joy Stick Mappings
@@ -62,8 +68,6 @@ HID_USAGE_WHL = 0x38
 HID_USAGE_POV = 0x39
 
 def event_pygame2vjoy(event):
-    import pygame
-    
     if type(event) == tuple:
         event_type, event_button, event_exis, event_value = event
     else:
@@ -77,10 +81,10 @@ def event_pygame2vjoy(event):
         event_axis = getattr(event, 'axis', None)
         event_value = getattr(event, 'value', None)
 
-    if event_type == pygame.JOYBUTTONDOWN or event_type == pygame.JOYBUTTONUP:
+    if event_type == PG_JOYBUTTONDOWN or event_type == PG_JOYBUTTONUP:
         vjoy_type   = VJOY_INPUT_TYPE_BUTTON 
         vjoy_axis   = None
-        vjoy_value  = 1 if event_type == pygame.JOYBUTTONDOWN else 0
+        vjoy_value  = 1 if event_type == PG_JOYBUTTONDOWN else 0
 
         button = event_button
         if button == BUTTON_CROSS:
@@ -120,7 +124,7 @@ def event_pygame2vjoy(event):
         
         return vjoy_type, vjoy_axis, vjoy_value
 
-    if event_type == pygame.JOYAXISMOTION:
+    if event_type == PG_JOYAXISMOTION:
         if event_axis == AXIS_L2 or event_axis == AXIS_R2:
             vjoy_type  = VJOY_INPUT_TYPE_BUTTON
             vjoy_axis  = VJOY_R2 if event_axis == AXIS_R2 else VJOY_L2
