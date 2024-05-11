@@ -160,7 +160,7 @@ class DupjoyClient:
 
     def __main_procedure(self):
         while not self.exiting:
-            for event in pygame.event.get():
+            for event in self.pygame.event.get():
                 vjoy_event = event_utils.event_pygame2vjoy(event)
                 if vjoy_event is not None:
                     self.__record_keypress(vjoy_event)
@@ -200,7 +200,7 @@ class DupjoyServer:
                 self.socket.settimeout(0.5)
                 conn, addr = self.socket.accept()
                 print('connected to', addr)
-                self.sock.settimeout(0.5)
+                self.socket.settimeout(0.5)
                 self.__read_data(conn)
             except socket.timeout:
                 pass
