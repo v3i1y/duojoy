@@ -157,6 +157,7 @@ class DupjoyClient:
             self.local_on = True
             self.remote_on = False
             print('local only mode enabled')
+        return True
 
     def __main_procedure(self):
         while not self.exiting:
