@@ -1,11 +1,15 @@
 import struct
 import math
+
 """
 pygame event types
 """
 PG_JOYBUTTONDOWN = 1539
 PG_JOYBUTTONUP   = 1540
 PG_JOYAXISMOTION = 1536
+
+DEVICE_ADDED = 1541
+DEVICE_REMOVED = 1542
 
 """
 Dual Shock Joy Stick Mappings
@@ -121,7 +125,6 @@ def event_pygame2vjoy(event):
             vjoy_axis = VJOY_R3
         if vjoy_axis == None:
             return None
-        
         return vjoy_type, vjoy_axis, vjoy_value
 
     if event_type == PG_JOYAXISMOTION:
@@ -177,3 +180,9 @@ def run_vjoy_event(vjoy, vjoy_event):
 
 def run_pygame_event(vjoy, pygame_event):
     run_vjoy_event_raw(vjoy, event_pygame2vjoy(pygame_event))
+
+def is_device_added(event):
+    return getattr(event, 'type', None) == DEVICE_ADDED
+
+def is_device_removed(event):
+    return getattr(event, 'type', None) == DEVICE_REMOVED
