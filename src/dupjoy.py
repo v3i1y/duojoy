@@ -1,4 +1,3 @@
-import pygame
 import socket
 import time
 import src.event_utils as event_utils
@@ -11,6 +10,9 @@ class DupjoyClient:
     """
 
     def __init__(self, server_ip, server_port):
+        import pygame # server does not need pygame so import here
+        self.pygame = pygame
+
         self.server_ip = server_ip
         self.server_port = server_port
     
@@ -18,8 +20,8 @@ class DupjoyClient:
         self.exiting = False
         self.__init_keypress()
 
-        pygame.init()
-        pygame.joystick.init()
+        self.pygame.init()
+        self.pygame.joystick.init()
         self.__init_joystick()
         self.vjoy = pyvjoy.VJoyDevice(1)
         
@@ -76,7 +78,7 @@ class DupjoyClient:
 
     def __init_joystick(self):
         print('initializing joystick...')
-        self.joystick = pygame.joystick.Joystick(0)
+        self.joystick = self.pygame.joystick.Joystick(0)
         self.joystick.init()
 
     def __send_event(self, vjoy_event):
