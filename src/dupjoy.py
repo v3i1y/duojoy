@@ -4,6 +4,10 @@ import src.event_utils as event_utils
 import pyvjoy
 import threading
 
+def handle_crash(e):
+    print(e)
+    input('Oops! Dupjoy crashed... Take a look at error above and press any key to exit...')    
+
 class DupjoyClient:
     """
     Dupjoy Client will read controller events and send them to server (if provided)
@@ -17,37 +21,39 @@ class DupjoyClient:
         self.server_port = server_port
     
     def start(self):
-        self.exiting = False
-        self.__init_keypress()
-
-        self.pygame.init()
-        self.pygame.joystick.init()
-        self.__init_joystick()
-        self.vjoy = pyvjoy.VJoyDevice(1)
-        
-        self.local_on = True
-        self.remote_on = True
-        self.socket = None
-        self.server_connection_thread = threading.Thread(target=self.__server_connection_procedure)
-        self.server_connection_thread.start()
-
-        # genshin autoclick
-        self.gi_dialog_auto_click = False
-        self.gi_dialog_auto_click_thread = threading.Thread(target=self.__gi_dialog_auto_click_procedure)
-        self.gi_dialog_auto_click_thread.start()
-
         try:
+            self.exiting = False
+            self.__init_keypress()
+
+            self.pygame.init()
+            self.pygame.joystick.init()
+            self.__init_joystick()
+            self.vjoy = pyvjoy.VJoyDevice(1)
+            
+            self.local_on = True
+            self.remote_on = True
+            self.socket = None
+            self.server_connection_thread = threading.Thread(target=self.__server_connection_procedure)
+            self.server_connection_thread.start()
+
+            # genshin autoclick
+            self.gi_dialog_auto_click = False
+            self.gi_dialog_auto_click_thread = threading.Thread(target=self.__gi_dialog_auto_click_procedure)
+            self.gi_dialog_auto_click_thread.start()
             self.__main_procedure()
         except KeyboardInterrupt:
             print('KeyboardInterrupt, exiting...')
             self.exiting = True
         except Exception as e:
-            print('Error in main procedure, exiting...')
-            print(e)
             self.exiting = True
+            handle_crash(e)
 
-        self.server_connection_thread.join()
-        self.gi_dialog_auto_click_thread.join()
+        # try to clean up. depending on when the program exits, following may just throws
+        try:
+            self.server_connection_thread.join()
+            self.gi_dialog_auto_click_thread.join()
+        except Exception as e:
+            pass
 
     def __server_connection_procedure(self):
         print('server connection thread started')
@@ -181,15 +187,18 @@ class DupjoyServer:
         self.port = port
 
     def start(self):
-        self.exiting = False
-        self.vjoy = pyvjoy.VJoyDevice(1)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind(('0.0.0.0', self.port))
-        self.socket.listen(1)
-        self.socket.settimeout(0.5)
-    
-        print('server started 0.0.0.0:{}'.format(self.port))
-        self.__main_loop()
+        try:
+            self.exiting = False
+            self.vjoy = pyvjoy.VJoyDevice(1)
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.bind(('0.0.0.0', self.port))
+            self.socket.listen(1)
+            self.socket.settimeout(0.5)
+        
+            print('server started 0.0.0.0:{}'.format(self.port))
+            self.__main_loop()
+        except Exception as e:
+            handle_crash(e)
     
     def __main_loop(self):
         while not self.exiting:
