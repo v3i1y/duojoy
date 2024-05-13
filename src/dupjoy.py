@@ -178,13 +178,14 @@ class DupjoyClient:
                     if event_utils.is_device_added(event):
                         self.__init_joystick()
 
-
 class DupjoyServer:
     """
     Dupjoy Server will receive controller events and send them to vjoy
     """
-    def __init__(self, port):
+    def __init__(self, port, max_connections=100):
         self.port = port
+        self.max_connections = max_connections
+        self.active_connections = []
 
     def start(self):
         try:
@@ -192,40 +193,49 @@ class DupjoyServer:
             self.vjoy = pyvjoy.VJoyDevice(1)
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.bind(('0.0.0.0', self.port))
-            self.socket.listen(1)
-            self.socket.settimeout(0.5)
-        
+            self.socket.listen(self.max_connections)
             print('server started 0.0.0.0:{}'.format(self.port))
             self.__main_loop()
         except Exception as e:
             handle_crash(e)
-    
+
     def __main_loop(self):
         while not self.exiting:
-            self.__accept_connection()
+            self.__accept_connections()
 
-    def __accept_connection(self):
-        try:
+    def __accept_connections(self):
+        while len(self.active_connections) < self.max_connections:
             try:
                 self.socket.settimeout(0.5)
                 conn, addr = self.socket.accept()
                 print('connected to', addr)
-                self.socket.settimeout(0.5)
-                self.__read_data(conn)
+                client_thread = threading.Thread(target=self.__handle_client, args=(conn,))
+                client_thread.start()
+                self.active_connections.append(client_thread)
+                self.clean_up_connections()
             except socket.timeout:
                 pass
             except Exception as e:
-                print('connection interrupted...')
+                print('error accepting connection...')
                 print(e)
-        except KeyboardInterrupt:
-            print('KeyboardInterrupt, exiting...')
-            self.exiting = True
+
+    def __handle_client(self, conn):
+        self.__read_data(conn)
+        conn.close()
+        self.clean_up_connections()
 
     def __read_data(self, conn):
-        while True:
-            data = conn.recv(4)
-            if data:
-                event_utils.run_vjoy_event(self.vjoy, event_utils.decode_vjoy_event(data))
-            else:
-                print('connection closed...')
-                break
+        try:
+            while not self.exiting:
+                data = conn.recv(4)
+                if data:
+                    event_utils.run_vjoy_event(self.vjoy, event_utils.decode_vjoy_event(data))
+                else:
+                    print('connection closed...')
+                    break
+        except Exception as e:
+            print('error reading data...')
+            print(e)
+
+    def clean_up_connections(self):
+        self.active_connections = [t for t in self.active_connections if t.is_alive()]
