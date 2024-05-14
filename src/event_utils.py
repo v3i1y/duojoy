@@ -71,6 +71,8 @@ HID_USAGE_SL1 = 0x37
 HID_USAGE_WHL = 0x38
 HID_USAGE_POV = 0x39
 
+last_axis_value = {}
+
 def event_pygame2vjoy(event):
     if type(event) == tuple:
         event_type, event_button, event_exis, event_value = event
@@ -149,8 +151,29 @@ def event_pygame2vjoy(event):
         vjoy_value = 0.5 + event_value / 2
         vjoy_value = max(vjoy_value, 0)
         vjoy_value = min(vjoy_value, 1)
-        vjoy_value *= 0x8000
 
+        drift_correction_threshold = 0.05
+        if vjoy_value - 0.5 < drift_correction_threshold and vjoy_value - 0.5 > -drift_correction_threshold:
+            vjoy_value = 0.5
+
+
+        vjoy_value_frac = vjoy_value
+        vjoy_value *= 0x8000
+        vjoy_value = round(vjoy_value / 1) * 1
+        global last_axis_value
+
+        if last_axis_value.get(vjoy_axis) == None:
+            last_axis_value[vjoy_axis] = []
+        last_values = last_axis_value[vjoy_axis]
+
+        if len(last_values) > 10:
+            last_values.pop(0)
+
+        # if last 10 values are the same, then ignore
+        if len(set(last_values)) == 1 and last_values[0] == vjoy_value:
+            return None
+        
+        last_values.append(vjoy_value)
         return vjoy_type, vjoy_axis, vjoy_value
     return None
 
